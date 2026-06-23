@@ -1,7 +1,7 @@
-import { DeleteTransactionPayload } from "./DeleteTransactionPayload";
-import { CreateTransactionPayload } from "./CreateTransactionPayload";
-import { GetTransactionPayload } from "./GetTransactionPayload";
-import { UpdateTransactionPayload } from "./UpdateTransactionPayload";
+import { DeleteTransactionPayload } from "./payload/DeleteTransactionPayload";
+import { CreateTransactionPayload } from "./payload/CreateTransactionPayload";
+import { GetTransactionPayload } from "./payload/GetTransactionPayload";
+import { UpdateTransactionPayload } from "./payload/UpdateTransactionPayload";
 
 export type Payload =
 | DeleteTransactionPayload
@@ -10,8 +10,5 @@ export type Payload =
 | UpdateTransactionPayload;
 
 export type MessageBody = {
-    source: string;
-    type: string;
     payload: Payload;
-    timestamp: string;
 };

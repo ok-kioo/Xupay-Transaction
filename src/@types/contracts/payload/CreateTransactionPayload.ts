@@ -1,4 +1,4 @@
-import { PayloadBase } from "./PayloadBase";
+import { PayloadBase } from "../PayloadBase";
 import { Prisma } from "@/infra/database/generated/client";
 
 export type CreateTransactionPayload = PayloadBase & {

@@ -1,10 +1,10 @@
+import type { JsonValue } from "./JsonValue";
+import type { RequestHeaders } from "./Request";
+
 export type Response = {
-  method: string;
-  path: string;
+  statusCode: number;
+  headers: RequestHeaders;
   body: {
-    source: string;
-    type: string;
-    payload: string;
-    timestamp: string;
+    [key: string]: JsonValue;
   };
 };

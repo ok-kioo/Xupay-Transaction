@@ -1,9 +1,9 @@
 import { Socket } from "net";
 import type { Request } from "../@types/contracts/Request";
 import { ErrorHandler } from "../infra/middleware/Error";
-import { TransactionService } from "@/modules/customer/service/TransactionService";
-import { TransactionController } from "@/modules/customer/controller/TransactionController";
-import { TransactionRepositoryImpl } from "@/modules/customer/domain/repository/TransactionRepositoryImpl";
+import { TransactionService } from "@/modules/transaction/service/TransactionService";
+import { TransactionController } from "@/modules/transaction/controller/TransactionController";
+import { TransactionRepositoryImpl } from "@/modules/transaction/domain/repository/TransactionRepositoryImpl";
 
 export class Routes {
     private transactionRepository: TransactionRepositoryImpl;

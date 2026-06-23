@@ -3,15 +3,15 @@ import { Socket } from "net";
 import { ITransactionRepository } from "../domain/repository/ITransactionRepository";
 import { ErrorHandler } from "@/infra/middleware/Error";
 import { ResponseParser } from "@/infra/parser/ResponseParser";
-import { CustomerServiceClient } from "./client/CustomerServiceClient";
+import { CustomerServiceClient } from "./client/TransactionServiceClient";
 import { SocketClient } from "@/infra/client/SocketClient";
+import { JsonCodec } from "@/infra/parser/JsonCodec";
 
 export class TransactionService {
   private readonly customerServiceClient: CustomerServiceClient;
 
   constructor(
     private readonly transactionRepository: ITransactionRepository,
-    
   ) {
     this.customerServiceClient = new CustomerServiceClient(
       new SocketClient(),
@@ -28,12 +28,23 @@ export class TransactionService {
     if (!customerId){
       return ErrorHandler.handle("ID do cliente é obrigatório para inclusão",socket);
     }
+    
+    const transaction = await this.transactionRepository.create({ amount, customerId });
 
-    const payload = 'amount=' + amount.toString() + ',customerId=' + customerId;
+    const responseBody = {
+      id: transaction.id,
+      amount: transaction.amount.toString(),
+      status: transaction.status,
+      customerId: transaction.customerId,
+      createdAt: transaction.createdAt.toISOString()
+    };
+    
+    const response = ResponseParser.serializeResponse(201, responseBody);
+    socket.write(response);
 
-    this.customerServiceClient.send("customer-update", payload);
-
-    await this.transactionRepository.create({ amount, customerId });
+    this.customerServiceClient.send("CUSTOMER_UPDATE", JsonCodec.stableStringify({balance: amount, customerId: customerId}));
+ 
+    socket.end();
   }
 
   public async updateTransaction(id: string, status: string, socket: Socket): Promise<void> {
@@ -48,7 +59,19 @@ export class TransactionService {
       return ErrorHandler.handle("Transação com este ID não encontrada",socket);
     }
 
-    await this.transactionRepository.update(id, { status });
+    const transaction = await this.transactionRepository.update(id, { status });
+
+    const responseBody = {
+      id: transaction.id,
+      amount: transaction.amount.toString(),
+      status: transaction.status,
+      customerId: transaction.customerId,
+      createdAt: transaction.createdAt.toISOString()
+    };
+    
+    const response = ResponseParser.serializeResponse(200, responseBody);
+    socket.write(response);
+    socket.end();
   }
 
   public async deleteTransaction(id: string, socket: Socket): Promise<void> {
@@ -63,6 +86,10 @@ export class TransactionService {
     }
 
     await this.transactionRepository.delete(id);
+
+    const response = ResponseParser.serializeResponse(204, {});
+    socket.write(response);
+    socket.end();
   }
 
   public async getTransaction(id: string, socket: Socket): Promise<void> {
@@ -77,21 +104,17 @@ export class TransactionService {
       return ErrorHandler.handle("Transação com este ID não encontrada",socket);
     }
 
-    const payload = 'id=' + transaction.id + ',amount=' + transaction.amount.toString() + ',status=' + transaction.status + ',customerId=' + transaction.customerId+',createdAt=' + transaction.createdAt.toISOString();
-
-    const response = ResponseParser.serialize({
-            method: "GET",
-            path: "transaction",
-            body: {
-                source: "SERVICE",
-                type: "RESPONSE",
-                payload: payload,
-                timestamp: new Date().toISOString()
-            }
-        });
-
-        socket.write(response);
-        socket.end();
+    const responseBody = {
+      id: transaction.id,
+      amount: transaction.amount.toString(),
+      status: transaction.status,
+      customerId: transaction.customerId,
+      createdAt: transaction.createdAt.toISOString()
+    };
+    
+    const response = ResponseParser.serializeResponse(200, responseBody);
+    socket.write(response);
+    socket.end();
 
   }
 }

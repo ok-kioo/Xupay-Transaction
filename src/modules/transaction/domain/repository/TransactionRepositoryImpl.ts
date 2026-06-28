@@ -1,13 +1,12 @@
 import { TransactionStatus } from "@/infra/database/generated/browser";
 import { Transaction } from "../entity/Transaction";
 import { ITransactionRepository } from "./ITransactionRepository";
-import { PrismaClient } from "@prisma/client/extension";
+import { prismaClient } from "@/infra/database/prismaClient";
 
 export class TransactionRepositoryImpl implements ITransactionRepository {
  
     public async create(transaction: Omit<Transaction, 'id' | 'createdAt' | 'payerEmail' | 'status' >): Promise<Transaction> {
-        const prisma = new PrismaClient();
-        return await prisma.transaction.create({
+        return await prismaClient.transaction.create({
             data: {
                 customerId: transaction.customerId,
                 amount: transaction.amount,
@@ -17,8 +16,7 @@ export class TransactionRepositoryImpl implements ITransactionRepository {
     }
 
     public async update(id: string, data: Partial<Transaction>): Promise<Transaction> {
-        const prisma = new PrismaClient();
-        return await prisma.transaction.update({
+        return await prismaClient.transaction.update({
             where: {
                 id: id
             },
@@ -27,8 +25,7 @@ export class TransactionRepositoryImpl implements ITransactionRepository {
     }
 
     public async delete(id: string): Promise<void> {
-        const prisma = new PrismaClient();
-        await prisma.transaction.delete({
+        await prismaClient.transaction.delete({
             where: {
                 id: id
             }
@@ -36,9 +33,7 @@ export class TransactionRepositoryImpl implements ITransactionRepository {
     }
 
     public async findById(id: string): Promise<Transaction | null> {
-        const prisma = new PrismaClient();
-
-        const transaction = await prisma.transaction.findUnique({
+        const transaction = await prismaClient.transaction.findUnique({
             where: {
                 id: id
             }

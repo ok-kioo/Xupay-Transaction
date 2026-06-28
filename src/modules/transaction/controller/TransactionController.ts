@@ -15,7 +15,7 @@ export class TransactionController {
         const validRequest = isValidRequest(request, socket);
 
         if (!validRequest){
-            return ErrorHandler.handle('Corpo da requisição inválido', socket);
+            return;
         }
 
         const payload = request.body.payload;

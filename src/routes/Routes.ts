@@ -18,16 +18,16 @@ export class Routes {
     }
 
     public handle(request: Request, socket: Socket): void {
-        if (request.path === "transaction-create" && request.method === "POST") {
+        if (request.path === "create" && request.method === "POST") {
             this.transactionController.createTransaction(request, socket);
         }
-        else if (request.path === "transaction-delete" && request.method === "DELETE") {
+        else if (request.path === "delete" && request.method === "DELETE") {
             this.transactionController.deleteTransaction(request, socket);
         }
-        else if (request.path === "transaction-update" && request.method === "PUT") {
+        else if (request.path === "update" && request.method === "PUT") {
             this.transactionController.updateTransaction(request, socket);
         }
-        else if (request.path === "transaction" && request.method === "GET") {
+        else if (request.path === "" && request.method === "GET") {
             this.transactionController.getTransaction(request, socket);
         }
         else {

@@ -44,6 +44,8 @@ export class TransactionService {
       txid: uuidv4().replace(/-/g, "")
     });
 
+    console.log("Pix code gerado:", pixCode);
+
     const transaction = await this.transactionRepository.create({ amount, customerId, pixCode });
 
     const responseBody = {
@@ -53,18 +55,6 @@ export class TransactionService {
       customerId: transaction.customerId,
       createdAt: transaction.createdAt.toISOString()
     };
-    
-    const idempotencyKey = crypto.randomUUID();
-
-    try {
-      await this.customerServiceClient.send("CUSTOMER_UPDATE", idempotencyKey, JsonCodec.stableStringify({id: customerId, balance: amount}));
-
-    } catch (error) {
-      
-      this.deleteTransaction(transaction.id, socket);
-      return ErrorHandler.handle("Erro ao atualizar saldo do cliente", socket);
-
-    }
 
     const response = ResponseParser.serializeResponse(201, responseBody);
     socket.write(response);
@@ -105,6 +95,20 @@ export class TransactionService {
 
     if (payerEmail !== undefined) {
       dataToUpdate.payerEmail = payerEmail;
+
+      const idempotencyKey = crypto.randomUUID();
+
+      try {
+        await this.customerServiceClient.send("CUSTOMER_UPDATE", 
+          idempotencyKey, 
+          JsonCodec.stableStringify({id: existingTransaction.customerId, balance: existingTransaction.amount.toString()}));
+
+      } catch (error) {
+        
+        this.deleteTransaction(existingTransaction.id, socket);
+        return ErrorHandler.handle("Erro ao atualizar saldo do cliente", socket);
+
+      }
     }
 
     const transaction = await this.transactionRepository.update(id, dataToUpdate);

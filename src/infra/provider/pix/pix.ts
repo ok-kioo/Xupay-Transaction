@@ -37,8 +37,8 @@ export function generatePix(req: PixRequest): string {
     payload += tlv("60", req.city.toUpperCase());
 
     payload += tlv(
-        "62",
-        tlv("05", req.txid)
+    "62",
+    tlv("05", "***")
     );
 
     payload += "6304";

@@ -54,13 +54,22 @@ export class TransactionService {
       createdAt: transaction.createdAt.toISOString()
     };
     
+    const idempotencyKey = crypto.randomUUID();
+
+    try {
+      await this.customerServiceClient.send("CUSTOMER_UPDATE", idempotencyKey, JsonCodec.stableStringify({id: customerId, balance: amount}));
+
+    } catch (error) {
+      
+      this.deleteTransaction(transaction.id, socket);
+      return ErrorHandler.handle("Erro ao atualizar saldo do cliente", socket);
+
+    }
+
     const response = ResponseParser.serializeResponse(201, responseBody);
     socket.write(response);
 
-    const idempotencyKey = crypto.randomUUID();
 
-    this.customerServiceClient.send("CUSTOMER_UPDATE", idempotencyKey, JsonCodec.stableStringify({id: customerId, balance: amount}));
- 
     socket.end();
   }
 

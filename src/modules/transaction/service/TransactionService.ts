@@ -9,11 +9,6 @@ import { JsonCodec } from "@/infra/parser/JsonCodec";
 import { generatePix } from "@/infra/provider/pix/pix";
 import { v4 as uuidv4 } from "uuid";
 
-type UpdateTransactionData = {
-  status: string|undefined,
-  payerEmail: string|undefined
-};
-
 export class TransactionService {
   private readonly customerServiceClient: CustomerServiceClient;
 
@@ -63,19 +58,14 @@ export class TransactionService {
     socket.end();
   }
 
-  public async updateTransaction(id: string, data:UpdateTransactionData, socket: Socket): Promise<void> {
-    const {
-    status,
-    payerEmail
-  } = data;
-
+  public async updateTransaction(id: string, payerEmail: string, socket: Socket): Promise<void> {
     if (!id) {
       return ErrorHandler
         .handle("ID da transação é obrigatório para atualização",socket);
     }
 
-    if (status !== undefined && !Object.values(TransactionStatus).includes(status as TransactionStatus)) {
-      return ErrorHandler.handle("Status da transação inválido",socket);
+    if(!payerEmail){
+      return ErrorHandler.handle("Email do pagador é obrigatório para atualização",socket);
     }
 
     const existingTransaction = await this.transactionRepository.findById(id);
@@ -85,30 +75,22 @@ export class TransactionService {
     }
 
     const dataToUpdate: {
-      status?: TransactionStatus;
-      payerEmail?: string;
-    } = {};
+      status: TransactionStatus;
+      payerEmail: string;
+    } = {
+      status: TransactionStatus.COMPLETED,
+      payerEmail
+    };
 
-    if (status !== undefined) {
-      dataToUpdate.status = status as TransactionStatus;
-    }
+    const idempotencyKey = crypto.randomUUID();
 
-    if (payerEmail !== undefined) {
-      dataToUpdate.payerEmail = payerEmail;
+    try {
+      await this.customerServiceClient.send("CUSTOMER_UPDATE", 
+        idempotencyKey, 
+        JsonCodec.stableStringify({id: existingTransaction.customerId, balance: existingTransaction.amount.toString()}));
 
-      const idempotencyKey = crypto.randomUUID();
-
-      try {
-        await this.customerServiceClient.send("CUSTOMER_UPDATE", 
-          idempotencyKey, 
-          JsonCodec.stableStringify({id: existingTransaction.customerId, balance: existingTransaction.amount.toString()}));
-
-      } catch (error) {
-        
-        this.deleteTransaction(existingTransaction.id, socket);
-        return ErrorHandler.handle("Erro ao atualizar saldo do cliente", socket);
-
-      }
+    } catch (error) {      
+      return ErrorHandler.handle("Erro ao atualizar saldo do cliente", socket);
     }
 
     const transaction = await this.transactionRepository.update(id, dataToUpdate);
@@ -142,9 +124,27 @@ export class TransactionService {
       return ErrorHandler.handle("Transação com este ID não encontrada",socket);
     }
 
-    await this.transactionRepository.delete(id);
+    if(existingTransaction.status === TransactionStatus.COMPLETED){
+      return ErrorHandler.handle("Transação concluída não pode ser excluída",socket);
+    }
 
-    const response = ResponseParser.serializeResponse(204, {});
+    const dataToUpdate: {
+      status: TransactionStatus;
+    } = {
+      status: TransactionStatus.FAILED,
+    };
+
+    const transaction = await this.transactionRepository.update(id, dataToUpdate);
+
+    const responseBody = {
+      id: transaction.id,
+      amount: transaction.amount.toString(),
+      status: transaction.status,
+      customerId: transaction.customerId,
+      createdAt: transaction.createdAt.toISOString(),
+    };
+
+    const response = ResponseParser.serializeResponse(201, responseBody);
     socket.write(response);
     socket.end();
   }

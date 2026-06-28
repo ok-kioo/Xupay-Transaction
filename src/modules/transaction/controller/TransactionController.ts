@@ -34,9 +34,9 @@ export class TransactionController {
         
         const payload = request.body.payload;
 
-        const { id, status, payerEmail } = payload as UpdateTransactionPayload;
+        const { id, payerEmail } = payload as UpdateTransactionPayload;
 
-        this.transactionService.updateTransaction(id, { status, payerEmail }, socket);
+        this.transactionService.updateTransaction(id, payerEmail, socket);
     }
     
     public deleteTransaction(request: Request, socket: any): void {

@@ -179,8 +179,7 @@ export class ResponseParser {
     return {
       kind: "UPDATE_TRANSACTION_PAYLOAD",
       id: this.requiredString(payload.id, "id"),
-      status: this.optionalString(payload.status),
-      payerEmail: this.optionalString(payload.payerEmail),
+      payerEmail: this.requiredString(payload.payerEmail, "payerEmail"),
     };
   }
 

@@ -165,7 +165,10 @@ export class ResponseParser {
   ): CreateTransactionPayload {
     return {
       kind: "CREATE_TRANSACTION_PAYLOAD",
-      amount: new Prisma.Decimal(this.requiredString(payload.amount, "amount")),
+      amount: this.requiredDecimal(payload.amount, "amount"),
+      pixKey: this.requiredString(payload.pixKey, "pixKey"),
+      customerName: this.requiredString(payload.customerName, "customerName"),
+      customerCity: this.requiredString(payload.customerCity, "customerCity"),
       customerId: this.requiredString(payload.customerId, "customerId"),
     };
   }
@@ -176,7 +179,8 @@ export class ResponseParser {
     return {
       kind: "UPDATE_TRANSACTION_PAYLOAD",
       id: this.requiredString(payload.id, "id"),
-      status: this.requiredString(payload.status, "status"),
+      status: this.optionalString(payload.status),
+      payerEmail: this.optionalString(payload.payerEmail),
     };
   }
 
@@ -188,6 +192,31 @@ export class ResponseParser {
       id: this.requiredString(payload.id, "id"),
     };
   }
+
+  private static requiredDecimal(
+  value: JsonValue | undefined,
+  fieldName: string
+): Prisma.Decimal {
+  if (typeof value === "number") {
+    return new Prisma.Decimal(value);
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim();
+
+    if (!normalized) {
+      throw new Error(`Payload inválido. Campo ${fieldName} ausente.`);
+    }
+
+    try {
+      return new Prisma.Decimal(normalized);
+    } catch {
+      throw new Error(`Payload inválido. Campo ${fieldName} não é um decimal válido.`);
+    }
+  }
+
+  throw new Error(`Payload inválido. Campo ${fieldName} ausente.`);
+}
 
   private static optionalString(value: JsonValue | undefined): string | undefined {
     return typeof value === "string" ? value : undefined;

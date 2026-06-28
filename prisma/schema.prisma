@@ -22,7 +22,10 @@ model Transaction {
   id         String   @id @default(uuid())
   amount     Decimal  @db.Decimal(14, 2)
   status     TransactionStatus @default(PENDING)
+  pixCode    String
   customerId String
+  payerEmail    String?
   createdAt  DateTime @default(now())
 }
+
  

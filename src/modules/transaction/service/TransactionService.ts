@@ -1,4 +1,4 @@
-import { Prisma } from "@/infra/database/generated/client";
+import { Prisma, TransactionStatus } from "@/infra/database/generated/client";
 import { Socket } from "net";
 import { ITransactionRepository } from "../domain/repository/ITransactionRepository";
 import { ErrorHandler } from "@/infra/middleware/Error";
@@ -6,6 +6,13 @@ import { ResponseParser } from "@/infra/parser/ResponseParser";
 import { CustomerServiceClient } from "./client/TransactionServiceClient";
 import { SocketClient } from "@/infra/client/SocketClient";
 import { JsonCodec } from "@/infra/parser/JsonCodec";
+import { generatePix } from "@/infra/provider/pix/pix";
+import { v4 as uuidv4 } from "uuid";
+
+type UpdateTransactionData = {
+  status: string|undefined,
+  payerEmail: string|undefined
+};
 
 export class TransactionService {
   private readonly customerServiceClient: CustomerServiceClient;
@@ -20,7 +27,7 @@ export class TransactionService {
     );
   }
 
-  public async createTransaction(amount: Prisma.Decimal, customerId: string, socket: Socket): Promise<void> {
+  public async createTransaction(amount: Prisma.Decimal, pixKey: string, customerName: string, customerCity: string, customerId: string, socket: Socket): Promise<void> {
     if (!amount){
       return ErrorHandler.handle("Valor da transação é obrigatório para inclusão",socket);
     }
@@ -29,7 +36,15 @@ export class TransactionService {
       return ErrorHandler.handle("ID do cliente é obrigatório para inclusão",socket);
     }
     
-    const transaction = await this.transactionRepository.create({ amount, customerId });
+    const pixCode = generatePix({
+      key: pixKey,
+      name: customerName,
+      city: customerCity,
+      amount: Number(amount),
+      txid: uuidv4().replace(/-/g, "")
+    });
+
+    const transaction = await this.transactionRepository.create({ amount, customerId, pixCode });
 
     const responseBody = {
       id: transaction.id,
@@ -42,15 +57,26 @@ export class TransactionService {
     const response = ResponseParser.serializeResponse(201, responseBody);
     socket.write(response);
 
-    this.customerServiceClient.send("CUSTOMER_UPDATE", JsonCodec.stableStringify({balance: amount, customerId: customerId}));
+    const idempotencyKey = crypto.randomUUID();
+
+    this.customerServiceClient.send("CUSTOMER_UPDATE", idempotencyKey, JsonCodec.stableStringify({id: customerId, balance: amount}));
  
     socket.end();
   }
 
-  public async updateTransaction(id: string, status: string, socket: Socket): Promise<void> {
+  public async updateTransaction(id: string, data:UpdateTransactionData, socket: Socket): Promise<void> {
+    const {
+    status,
+    payerEmail
+  } = data;
+
     if (!id) {
       return ErrorHandler
         .handle("ID da transação é obrigatório para atualização",socket);
+    }
+
+    if (status !== undefined && !Object.values(TransactionStatus).includes(status as TransactionStatus)) {
+      return ErrorHandler.handle("Status da transação inválido",socket);
     }
 
     const existingTransaction = await this.transactionRepository.findById(id);
@@ -59,14 +85,32 @@ export class TransactionService {
       return ErrorHandler.handle("Transação com este ID não encontrada",socket);
     }
 
-    const transaction = await this.transactionRepository.update(id, { status });
+    const dataToUpdate: {
+      status?: TransactionStatus;
+      payerEmail?: string;
+    } = {};
+
+    if (status !== undefined) {
+      dataToUpdate.status = status as TransactionStatus;
+    }
+
+    if (payerEmail !== undefined) {
+      dataToUpdate.payerEmail = payerEmail;
+    }
+
+    const transaction = await this.transactionRepository.update(id, dataToUpdate);
 
     const responseBody = {
       id: transaction.id,
       amount: transaction.amount.toString(),
       status: transaction.status,
       customerId: transaction.customerId,
-      createdAt: transaction.createdAt.toISOString()
+      createdAt: transaction.createdAt.toISOString(),
+
+      ...(transaction.payerEmail && {
+        payerEmail: transaction.payerEmail,
+        pixCode: transaction.pixCode
+      })
     };
     
     const response = ResponseParser.serializeResponse(200, responseBody);
@@ -103,15 +147,18 @@ export class TransactionService {
     if (!transaction) {
       return ErrorHandler.handle("Transação com este ID não encontrada",socket);
     }
-
+    
     const responseBody = {
       id: transaction.id,
       amount: transaction.amount.toString(),
       status: transaction.status,
       customerId: transaction.customerId,
-      createdAt: transaction.createdAt.toISOString()
+      createdAt: transaction.createdAt.toISOString(),
+      ...(transaction.payerEmail && {
+        payerEmail: transaction.payerEmail
+      })
     };
-    
+
     const response = ResponseParser.serializeResponse(200, responseBody);
     socket.write(response);
     socket.end();

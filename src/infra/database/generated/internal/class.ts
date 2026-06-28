@@ -20,7 +20,7 @@ const config: runtime.GetPrismaClientConfig = {
   "clientVersion": "7.8.0",
   "engineVersion": "3c6e192761c0362d496ed980de936e2f3cebcd3a",
   "activeProvider": "postgresql",
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Get a free hosted Postgres database in seconds: `npx create-db`\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../src/infra/database/generated\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nmodel Customer {\n  id        String   @id @default(uuid())\n  name      String\n  document  String   @unique\n  balance   Decimal  @default(0) @db.Decimal(14, 2)\n  createdAt DateTime @default(now())\n}\n",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Get a free hosted Postgres database in seconds: `npx create-db`\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../src/infra/database/generated\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nenum TransactionStatus {\n  PENDING\n  COMPLETED\n  FAILED\n}\n\nmodel Transaction {\n  id         String            @id @default(uuid())\n  amount     Decimal           @db.Decimal(14, 2)\n  status     TransactionStatus @default(PENDING)\n  pixCode    String\n  customerId String\n  payerEmail String?\n  createdAt  DateTime          @default(now())\n}\n",
   "runtimeDataModel": {
     "models": {},
     "enums": {},
@@ -32,10 +32,10 @@ const config: runtime.GetPrismaClientConfig = {
   }
 }
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"Customer\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"document\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"balance\",\"kind\":\"scalar\",\"type\":\"Decimal\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"Transaction\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"amount\",\"kind\":\"scalar\",\"type\":\"Decimal\"},{\"name\":\"status\",\"kind\":\"enum\",\"type\":\"TransactionStatus\"},{\"name\":\"pixCode\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"customerId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"payerEmail\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
 config.parameterizationSchema = {
-  strings: JSON.parse("[\"where\",\"Customer.findUnique\",\"Customer.findUniqueOrThrow\",\"orderBy\",\"cursor\",\"Customer.findFirst\",\"Customer.findFirstOrThrow\",\"Customer.findMany\",\"data\",\"Customer.createOne\",\"Customer.createMany\",\"Customer.createManyAndReturn\",\"Customer.updateOne\",\"Customer.updateMany\",\"Customer.updateManyAndReturn\",\"create\",\"update\",\"Customer.upsertOne\",\"Customer.deleteOne\",\"Customer.deleteMany\",\"having\",\"_count\",\"_avg\",\"_sum\",\"_min\",\"_max\",\"Customer.groupBy\",\"Customer.aggregate\",\"AND\",\"OR\",\"NOT\",\"id\",\"name\",\"document\",\"balance\",\"createdAt\",\"equals\",\"in\",\"notIn\",\"lt\",\"lte\",\"gt\",\"gte\",\"not\",\"contains\",\"startsWith\",\"endsWith\",\"set\",\"increment\",\"decrement\",\"multiply\",\"divide\"]"),
-  graph: "MAsQCBwAACUAMB0AAAQAEB4AACUAMB8BAAAAASABACYAISEBAAAAASIQACcAISNAACgAIQEAAAABACABAAAAAQAgCBwAACUAMB0AAAQAEB4AACUAMB8BACYAISABACYAISEBACYAISIQACcAISNAACgAIQADAAAABAAgAwAABQAwBAAAAQAgAwAAAAQAIAMAAAUAMAQAAAEAIAMAAAAEACADAAAFADAEAAABACAFHwEAAAABIAEAAAABIQEAAAABIhAAAAABI0AAAAABAQgAAAkAIAUfAQAAAAEgAQAAAAEhAQAAAAEiEAAAAAEjQAAAAAEBCAAACwAwAQgAAAsAMAUfAQAuACEgAQAuACEhAQAuACEiEAAvACEjQAAwACECAAAAAQAgCAAADgAgBR8BAC4AISABAC4AISEBAC4AISIQAC8AISNAADAAIQIAAAAEACAIAAAQACACAAAABAAgCAAAEAAgAwAAAAEAIA8AAAkAIBAAAA4AIAEAAAABACABAAAABAAgBRUAACkAIBYAACoAIBcAAC0AIBgAACwAIBkAACsAIAgcAAAaADAdAAAXABAeAAAaADAfAQAbACEgAQAbACEhAQAbACEiEAAcACEjQAAdACEDAAAABAAgAwAAFgAwFAAAFwAgAwAAAAQAIAMAAAUAMAQAAAEAIAgcAAAaADAdAAAXABAeAAAaADAfAQAbACEgAQAbACEhAQAbACEiEAAcACEjQAAdACEOFQAAHwAgGAAAJAAgGQAAJAAgJAEAAAABJQEAAAAEJgEAAAAEJwEAAAABKAEAAAABKQEAAAABKgEAAAABKwEAIwAhLAEAAAABLQEAAAABLgEAAAABDRUAAB8AIBYAACIAIBcAACIAIBgAACIAIBkAACIAICQQAAAAASUQAAAABCYQAAAABCcQAAAAASgQAAAAASkQAAAAASoQAAAAASsQACEAIQsVAAAfACAYAAAgACAZAAAgACAkQAAAAAElQAAAAAQmQAAAAAQnQAAAAAEoQAAAAAEpQAAAAAEqQAAAAAErQAAeACELFQAAHwAgGAAAIAAgGQAAIAAgJEAAAAABJUAAAAAEJkAAAAAEJ0AAAAABKEAAAAABKUAAAAABKkAAAAABK0AAHgAhCCQCAAAAASUCAAAABCYCAAAABCcCAAAAASgCAAAAASkCAAAAASoCAAAAASsCAB8AIQgkQAAAAAElQAAAAAQmQAAAAAQnQAAAAAEoQAAAAAEpQAAAAAEqQAAAAAErQAAgACENFQAAHwAgFgAAIgAgFwAAIgAgGAAAIgAgGQAAIgAgJBAAAAABJRAAAAAEJhAAAAAEJxAAAAABKBAAAAABKRAAAAABKhAAAAABKxAAIQAhCCQQAAAAASUQAAAABCYQAAAABCcQAAAAASgQAAAAASkQAAAAASoQAAAAASsQACIAIQ4VAAAfACAYAAAkACAZAAAkACAkAQAAAAElAQAAAAQmAQAAAAQnAQAAAAEoAQAAAAEpAQAAAAEqAQAAAAErAQAjACEsAQAAAAEtAQAAAAEuAQAAAAELJAEAAAABJQEAAAAEJgEAAAAEJwEAAAABKAEAAAABKQEAAAABKgEAAAABKwEAJAAhLAEAAAABLQEAAAABLgEAAAABCBwAACUAMB0AAAQAEB4AACUAMB8BACYAISABACYAISEBACYAISIQACcAISNAACgAIQskAQAAAAElAQAAAAQmAQAAAAQnAQAAAAEoAQAAAAEpAQAAAAEqAQAAAAErAQAkACEsAQAAAAEtAQAAAAEuAQAAAAEIJBAAAAABJRAAAAAEJhAAAAAEJxAAAAABKBAAAAABKRAAAAABKhAAAAABKxAAIgAhCCRAAAAAASVAAAAABCZAAAAABCdAAAAAAShAAAAAASlAAAAAASpAAAAAAStAACAAIQAAAAAAAS8BAAAAAQUvEAAAAAEwEAAAAAExEAAAAAEyEAAAAAEzEAAAAAEBL0AAAAABAAAAAAUVAAYWAAcXAAgYAAkZAAoAAAAAAAUVAAYWAAcXAAgYAAkZAAoBAgECAwEFBgEGBwEHCAEJCgEKDAILDQMMDwENEQIOEgQREwESFAETFQIaGAUbGQs"
+  strings: JSON.parse("[\"where\",\"Transaction.findUnique\",\"Transaction.findUniqueOrThrow\",\"orderBy\",\"cursor\",\"Transaction.findFirst\",\"Transaction.findFirstOrThrow\",\"Transaction.findMany\",\"data\",\"Transaction.createOne\",\"Transaction.createMany\",\"Transaction.createManyAndReturn\",\"Transaction.updateOne\",\"Transaction.updateMany\",\"Transaction.updateManyAndReturn\",\"create\",\"update\",\"Transaction.upsertOne\",\"Transaction.deleteOne\",\"Transaction.deleteMany\",\"having\",\"_count\",\"_avg\",\"_sum\",\"_min\",\"_max\",\"Transaction.groupBy\",\"Transaction.aggregate\",\"AND\",\"OR\",\"NOT\",\"id\",\"amount\",\"TransactionStatus\",\"status\",\"pixCode\",\"customerId\",\"payerEmail\",\"createdAt\",\"equals\",\"in\",\"notIn\",\"lt\",\"lte\",\"gt\",\"gte\",\"not\",\"contains\",\"startsWith\",\"endsWith\",\"set\",\"increment\",\"decrement\",\"multiply\",\"divide\"]"),
+  graph: "PAsQChwAACwAMB0AAAQAEB4AACwAMB8BAAAAASAQAC4AISIAAC8iIiMBAC0AISQBAC0AISUBADAAISZAADEAIQEAAAABACABAAAAAQAgChwAACwAMB0AAAQAEB4AACwAMB8BAC0AISAQAC4AISIAAC8iIiMBAC0AISQBAC0AISUBADAAISZAADEAIQElAAAyACADAAAABAAgAwAABQAwBAAAAQAgAwAAAAQAIAMAAAUAMAQAAAEAIAMAAAAEACADAAAFADAEAAABACAHHwEAAAABIBAAAAABIgAAACICIwEAAAABJAEAAAABJQEAAAABJkAAAAABAQgAAAkAIAcfAQAAAAEgEAAAAAEiAAAAIgIjAQAAAAEkAQAAAAElAQAAAAEmQAAAAAEBCAAACwAwAQgAAAsAMAcfAQA4ACEgEAA5ACEiAAA6IiIjAQA4ACEkAQA4ACElAQA7ACEmQAA8ACECAAAAAQAgCAAADgAgBx8BADgAISAQADkAISIAADoiIiMBADgAISQBADgAISUBADsAISZAADwAIQIAAAAEACAIAAAQACACAAAABAAgCAAAEAAgAwAAAAEAIA8AAAkAIBAAAA4AIAEAAAABACABAAAABAAgBhUAADMAIBYAADQAIBcAADcAIBgAADYAIBkAADUAICUAADIAIAocAAAaADAdAAAXABAeAAAaADAfAQAbACEgEAAcACEiAAAdIiIjAQAbACEkAQAbACElAQAeACEmQAAfACEDAAAABAAgAwAAFgAwFAAAFwAgAwAAAAQAIAMAAAUAMAQAAAEAIAocAAAaADAdAAAXABAeAAAaADAfAQAbACEgEAAcACEiAAAdIiIjAQAbACEkAQAbACElAQAeACEmQAAfACEOFQAAIQAgGAAAKwAgGQAAKwAgJwEAAAABKAEAAAAEKQEAAAAEKgEAAAABKwEAAAABLAEAAAABLQEAAAABLgEAKgAhLwEAAAABMAEAAAABMQEAAAABDRUAACEAIBYAACkAIBcAACkAIBgAACkAIBkAACkAICcQAAAAASgQAAAABCkQAAAABCoQAAAAASsQAAAAASwQAAAAAS0QAAAAAS4QACgAIQcVAAAhACAYAAAnACAZAAAnACAnAAAAIgIoAAAAIggpAAAAIgguAAAmIiIOFQAAJAAgGAAAJQAgGQAAJQAgJwEAAAABKAEAAAAFKQEAAAAFKgEAAAABKwEAAAABLAEAAAABLQEAAAABLgEAIwAhLwEAAAABMAEAAAABMQEAAAABCxUAACEAIBgAACIAIBkAACIAICdAAAAAAShAAAAABClAAAAABCpAAAAAAStAAAAAASxAAAAAAS1AAAAAAS5AACAAIQsVAAAhACAYAAAiACAZAAAiACAnQAAAAAEoQAAAAAQpQAAAAAQqQAAAAAErQAAAAAEsQAAAAAEtQAAAAAEuQAAgACEIJwIAAAABKAIAAAAEKQIAAAAEKgIAAAABKwIAAAABLAIAAAABLQIAAAABLgIAIQAhCCdAAAAAAShAAAAABClAAAAABCpAAAAAAStAAAAAASxAAAAAAS1AAAAAAS5AACIAIQ4VAAAkACAYAAAlACAZAAAlACAnAQAAAAEoAQAAAAUpAQAAAAUqAQAAAAErAQAAAAEsAQAAAAEtAQAAAAEuAQAjACEvAQAAAAEwAQAAAAExAQAAAAEIJwIAAAABKAIAAAAFKQIAAAAFKgIAAAABKwIAAAABLAIAAAABLQIAAAABLgIAJAAhCycBAAAAASgBAAAABSkBAAAABSoBAAAAASsBAAAAASwBAAAAAS0BAAAAAS4BACUAIS8BAAAAATABAAAAATEBAAAAAQcVAAAhACAYAAAnACAZAAAnACAnAAAAIgIoAAAAIggpAAAAIgguAAAmIiIEJwAAACICKAAAACIIKQAAACIILgAAJyIiDRUAACEAIBYAACkAIBcAACkAIBgAACkAIBkAACkAICcQAAAAASgQAAAABCkQAAAABCoQAAAAASsQAAAAASwQAAAAAS0QAAAAAS4QACgAIQgnEAAAAAEoEAAAAAQpEAAAAAQqEAAAAAErEAAAAAEsEAAAAAEtEAAAAAEuEAApACEOFQAAIQAgGAAAKwAgGQAAKwAgJwEAAAABKAEAAAAEKQEAAAAEKgEAAAABKwEAAAABLAEAAAABLQEAAAABLgEAKgAhLwEAAAABMAEAAAABMQEAAAABCycBAAAAASgBAAAABCkBAAAABCoBAAAAASsBAAAAASwBAAAAAS0BAAAAAS4BACsAIS8BAAAAATABAAAAATEBAAAAAQocAAAsADAdAAAEABAeAAAsADAfAQAtACEgEAAuACEiAAAvIiIjAQAtACEkAQAtACElAQAwACEmQAAxACELJwEAAAABKAEAAAAEKQEAAAAEKgEAAAABKwEAAAABLAEAAAABLQEAAAABLgEAKwAhLwEAAAABMAEAAAABMQEAAAABCCcQAAAAASgQAAAABCkQAAAABCoQAAAAASsQAAAAASwQAAAAAS0QAAAAAS4QACkAIQQnAAAAIgIoAAAAIggpAAAAIgguAAAnIiILJwEAAAABKAEAAAAFKQEAAAAFKgEAAAABKwEAAAABLAEAAAABLQEAAAABLgEAJQAhLwEAAAABMAEAAAABMQEAAAABCCdAAAAAAShAAAAABClAAAAABCpAAAAAAStAAAAAASxAAAAAAS1AAAAAAS5AACIAIQAAAAAAAAEyAQAAAAEFMhAAAAABMxAAAAABNBAAAAABNRAAAAABNhAAAAABATIAAAAiAgEyAQAAAAEBMkAAAAABAAAAAAUVAAYWAAcXAAgYAAkZAAoAAAAAAAUVAAYWAAcXAAgYAAkZAAoBAgECAwEFBgEGBwEHCAEJCgEKDAILDQMMDwENEQIOEgQREwESFAETFQIaGAUbGQs"
 }
 
 async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Module> {
@@ -70,8 +70,8 @@ export interface PrismaClientConstructor {
    * const prisma = new PrismaClient({
    *   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL })
    * })
-   * // Fetch zero or more Customers
-   * const customers = await prisma.customer.findMany()
+   * // Fetch zero or more Transactions
+   * const transactions = await prisma.transaction.findMany()
    * ```
    * 
    * Read more in our [docs](https://pris.ly/d/client).
@@ -94,8 +94,8 @@ export interface PrismaClientConstructor {
  * const prisma = new PrismaClient({
  *   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL })
  * })
- * // Fetch zero or more Customers
- * const customers = await prisma.customer.findMany()
+ * // Fetch zero or more Transactions
+ * const transactions = await prisma.transaction.findMany()
  * ```
  * 
  * Read more in our [docs](https://pris.ly/d/client).
@@ -189,14 +189,14 @@ export interface PrismaClient<
   }>>
 
       /**
-   * `prisma.customer`: Exposes CRUD operations for the **Customer** model.
+   * `prisma.transaction`: Exposes CRUD operations for the **Transaction** model.
     * Example usage:
     * ```ts
-    * // Fetch zero or more Customers
-    * const customers = await prisma.customer.findMany()
+    * // Fetch zero or more Transactions
+    * const transactions = await prisma.transaction.findMany()
     * ```
     */
-  get customer(): Prisma.CustomerDelegate<ExtArgs, { omit: OmitOpts }>;
+  get transaction(): Prisma.TransactionDelegate<ExtArgs, { omit: OmitOpts }>;
 }
 
 export function getPrismaClientClass(): PrismaClientConstructor {

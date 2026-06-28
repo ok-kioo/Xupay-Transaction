@@ -8,8 +8,8 @@ export class CustomerServiceClient {
     private readonly servicePort: number
   ) {}
 
-  public async send(event: string, apiPayload: string): Promise<void> {
-    const request = this.buildSendRequest(event, apiPayload);
+  public async send(event: string, idempotencyKey: string, apiPayload: string): Promise<void> {
+    const request = this.buildSendRequest(event, idempotencyKey, apiPayload);
 
     await this.socketClient.send(
       this.serviceHost,
@@ -18,7 +18,7 @@ export class CustomerServiceClient {
     );
     }
 
-  private buildSendRequest(event:string, apiPayload: string): string {
+  private buildSendRequest(event:string, idempotencyKey: string, apiPayload: string): string {
     return ResponseParser.serialize({
       method: 'POST',
       path: 'publish',
@@ -26,7 +26,7 @@ export class CustomerServiceClient {
       secret: process.env.XUPAY_SERVICE_SECRET,
       body: {
         event:event,
-        idempotencyKey: crypto.randomUUID(),
+        idempotencyKey: idempotencyKey,
         apiPayload: apiPayload,
         timestamp: new Date().toISOString()
       }

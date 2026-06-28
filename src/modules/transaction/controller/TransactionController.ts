@@ -20,9 +20,9 @@ export class TransactionController {
 
         const payload = request.body.payload;
 
-        const { amount, customerId } = payload as CreateTransactionPayload;
+        const { amount, pixKey, customerName, customerCity, customerId } = payload as CreateTransactionPayload;
 
-        this.transactionService.createTransaction(amount, customerId, socket);
+        this.transactionService.createTransaction(amount, pixKey, customerName, customerCity, customerId, socket);
     }
 
     public updateTransaction(request: Request, socket: any): void {
@@ -34,9 +34,9 @@ export class TransactionController {
         
         const payload = request.body.payload;
 
-        const { id, status } = payload as UpdateTransactionPayload;
+        const { id, status, payerEmail } = payload as UpdateTransactionPayload;
 
-        this.transactionService.updateTransaction(id, status, socket);
+        this.transactionService.updateTransaction(id, { status, payerEmail }, socket);
     }
     
     public deleteTransaction(request: Request, socket: any): void {

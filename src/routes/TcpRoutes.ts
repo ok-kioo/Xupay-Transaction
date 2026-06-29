@@ -1,11 +1,11 @@
 import { Socket } from "net";
-import type { Request } from "../@types/contracts/Request";
-import { ErrorHandler } from "../infra/middleware/Error";
+import type { Request } from "../@types/contracts/TcpRequest";
+import { ErrorHandler } from "../infra/middleware/error/TcpError";
 import { TransactionService } from "@/modules/transaction/service/TransactionService";
 import { TransactionController } from "@/modules/transaction/controller/TransactionController";
 import { TransactionRepositoryImpl } from "@/modules/transaction/domain/repository/TransactionRepositoryImpl";
 
-export class Routes {
+export class TcpRoutes {
     private transactionRepository: TransactionRepositoryImpl;
     private transactionController: TransactionController;
     private transactionService: TransactionService;

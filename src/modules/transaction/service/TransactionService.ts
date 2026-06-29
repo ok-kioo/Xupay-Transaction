@@ -1,24 +1,24 @@
 import { Prisma, TransactionStatus } from "@/infra/database/generated/client";
 import { Socket } from "net";
 import { ITransactionRepository } from "../domain/repository/ITransactionRepository";
-import { ErrorHandler } from "@/infra/middleware/Error";
+import { ErrorHandler } from "@/infra/middleware/error/TcpError";
 import { ResponseParser } from "@/infra/parser/ResponseParser";
-import { CustomerServiceClient } from "./client/TransactionServiceClient";
-import { SocketClient } from "@/infra/client/SocketClient";
+import { TransactionServiceClient } from "./client/TransactionServiceClient";
+import { TcpSocketClient } from "@/infra/client/TcpSocketClient";
 import { JsonCodec } from "@/infra/parser/JsonCodec";
 import { generatePix } from "@/infra/provider/pix/pix";
 import { v4 as uuidv4 } from "uuid";
 
 export class TransactionService {
-  private readonly customerServiceClient: CustomerServiceClient;
+  private readonly transactionServiceClient: TransactionServiceClient;
 
   constructor(
     private readonly transactionRepository: ITransactionRepository,
   ) {
-    this.customerServiceClient = new CustomerServiceClient(
-      new SocketClient(),
+    this.transactionServiceClient = new TransactionServiceClient(
+      new TcpSocketClient(),
       process.env.CUSTOMER_SERVICE_HOST || " ",
-      parseInt(process.env.CUSTOMER_SERVICE_PORT || " ")
+      process.env.CUSTOMER_SERVICE_PORT || " "
     );
   }
 
@@ -85,7 +85,7 @@ export class TransactionService {
     const idempotencyKey = crypto.randomUUID();
 
     try {
-      await this.customerServiceClient.send("CUSTOMER_UPDATE", 
+      await this.transactionServiceClient.send("CUSTOMER_UPDATE", 
         idempotencyKey, 
         JsonCodec.stableStringify({id: existingTransaction.customerId, balance: existingTransaction.amount.toString()}));
 

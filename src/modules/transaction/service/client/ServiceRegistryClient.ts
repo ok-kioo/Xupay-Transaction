@@ -11,34 +11,33 @@ function parseRequiredPort(value: string | undefined, name: string): number {
   return parsedPort;
 }
 
-export class TransactionServiceClient {
+export class ServiceRegistryClient {
   constructor(
     private readonly socketClient: TcpSocketClient,
-    private readonly serviceHost: string,
-    private readonly servicePort: string
+    private readonly serviceRegistryHost: string,
+    private readonly serviceRegistryPort: string
   ) {}
 
-  public async send(event: string, idempotencyKey: string, apiPayload: string): Promise<void> {
-    const request = this.buildSendRequest(event, idempotencyKey, apiPayload);
+  public async send(instanceName: string, event: string, path: string): Promise<void> {
+    const request = this.buildSendRequest(instanceName, event, path);
 
     await this.socketClient.send(
-      this.serviceHost,
-      parseRequiredPort(this.servicePort, "servicePort"),
+      this.serviceRegistryHost,
+      parseRequiredPort(this.serviceRegistryPort, "serviceRegistryPort"),
       request
     );
-    }
+  }
 
-  private buildSendRequest(event:string, idempotencyKey: string, apiPayload: string): string {
+  private buildSendRequest(instanceName: string, event: string, path: string): string {
     return ResponseParser.serialize({
       method: 'POST',
-      path: 'publish',
+      path: 'create',
       service: process.env.XUPAY_SERVICE_NAME || "xupay-transaction-service",
       secret: process.env.XUPAY_SERVICE_SECRET,
       body: {
-        event:event,
-        idempotencyKey: idempotencyKey,
-        apiPayload: apiPayload,
-        timestamp: new Date().toISOString()
+        instanceName: instanceName,
+        event: event,
+        path: path
       }
     });
   }

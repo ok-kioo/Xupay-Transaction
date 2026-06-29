@@ -1,6 +1,6 @@
-import { isValidRequest, Request } from '@/@types/contracts/Request';
+import { isValidRequest, Request } from '@/@types/contracts/TcpRequest';
 import { TransactionService } from '../service/TransactionService';
-import { ErrorHandler } from '@/infra/middleware/Error';
+import { ErrorHandler } from '@/infra/middleware/error/TcpError';
 import { CreateTransactionPayload } from '@/@types/contracts/payload/CreateTransactionPayload';
 import { UpdateTransactionPayload } from '@/@types/contracts/payload/UpdateTransactionPayload';
 import { DeleteTransactionPayload } from '@/@types/contracts/payload/DeleteTransactionPayload';

@@ -1,7 +1,7 @@
 import crypto from "crypto";
-import { Socket } from "net";
+import dgram from "dgram"; 
 import { MessageBody } from "./MessageBody";
-import { ErrorHandler } from "../../infra/middleware/Error";
+import { ErrorHandler } from "../../infra/middleware/error/UdpError";
 
 export type RequestHeaders = Record<string, string>;
 
@@ -19,16 +19,16 @@ export type Request = {
   origin?: RequestOrigin;
 };
 
-export function isValidRequest(request: Request, socket: Socket): Request | void {
+export function isValidRequest(request: Request, server: dgram.Socket, rinfo: dgram.RemoteInfo): Request | void {
   const trustedService = authenticateService(request);
 
   if (!trustedService) {
-    return ErrorHandler.handle("Serviço de origem não autorizado", socket);
+    return ErrorHandler.handle("Serviço de origem não autorizado", server, rinfo);
   }
 
   request.origin = {
     service: trustedService,
-    ip: socket.remoteAddress,
+    ip: rinfo.address,
   };
 
   return request;

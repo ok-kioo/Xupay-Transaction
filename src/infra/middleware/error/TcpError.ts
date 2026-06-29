@@ -1,5 +1,5 @@
 import { Socket } from "net";
-import { JsonCodec } from "../parser/JsonCodec";
+import { JsonCodec } from "../../parser/JsonCodec";
 
 export class ErrorHandler {
     

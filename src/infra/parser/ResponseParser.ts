@@ -13,13 +13,15 @@ import { JsonCodec } from "./JsonCodec";
 import type { JsonObject } from "./JsonCodec";
 import { Prisma } from "@/infra/database/generated/client";
 import { HealthPayload } from "@/@types/contracts/payload/HealthPayload";
+import { GetHistoryTransactionPayload } from "@/@types/contracts/payload/GetHistoryTransactionPayload copy";
 
 type ParsedPayload =
   | CreateTransactionPayload
   | GetTransactionPayload
   | UpdateTransactionPayload
   | DeleteTransactionPayload
-  | HealthPayload;
+  | HealthPayload
+  | GetHistoryTransactionPayload;
 
 type SerializableRequest = {
   method: string;
@@ -144,6 +146,10 @@ export class ResponseParser {
       return this.parseHealthPayload(payload);
     }
 
+    if (path === "history") {
+      return this.parseGetHistoryPayload(payload);
+    }
+
     return this.parseGetPayload(payload);
   }
 
@@ -170,6 +176,16 @@ export class ResponseParser {
   ): GetTransactionPayload {
     return {
       kind: "GET_TRANSACTION_PAYLOAD",
+      id: this.requiredString(payload.id, "id"),
+      customerId: this.requiredString(payload.customerId, "customerId"),
+    };
+  }
+
+  private static parseGetHistoryPayload(
+    payload: JsonObject
+  ): GetHistoryTransactionPayload {
+    return {
+      kind: "GET_HISTORY_TRANSACTION_PAYLOAD",
       customerId: this.requiredString(payload.customerId, "customerId"),
     };
   }
@@ -193,6 +209,7 @@ export class ResponseParser {
     return {
       kind: "UPDATE_TRANSACTION_PAYLOAD",
       id: this.requiredString(payload.id, "id"),
+      customerId: this.requiredString(payload.customerId, "customerId"),
       payerEmail: this.requiredString(payload.payerEmail, "payerEmail"),
     };
   }
@@ -202,6 +219,7 @@ export class ResponseParser {
   ): DeleteTransactionPayload {
     return {
       kind: "DELETE_TRANSACTION_PAYLOAD",
+      customerId: this.requiredString(payload.customerId, "customerId"),
       id: this.requiredString(payload.id, "id"),
     };
   }

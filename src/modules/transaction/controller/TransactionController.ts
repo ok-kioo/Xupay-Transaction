@@ -5,6 +5,7 @@ import { CreateTransactionPayload } from '@/@types/contracts/payload/CreateTrans
 import { UpdateTransactionPayload } from '@/@types/contracts/payload/UpdateTransactionPayload';
 import { DeleteTransactionPayload } from '@/@types/contracts/payload/DeleteTransactionPayload';
 import { GetTransactionPayload } from '@/@types/contracts/payload/GetTransactionPayload';
+import { GetHistoryTransactionPayload } from '@/@types/contracts/payload/GetHistoryTransactionPayload copy';
 
 export class TransactionController {
     constructor(
@@ -34,9 +35,9 @@ export class TransactionController {
         
         const payload = request.body.payload;
 
-        const { id, payerEmail } = payload as UpdateTransactionPayload;
+        const { id, customerId, payerEmail } = payload as UpdateTransactionPayload;
 
-        this.transactionService.updateTransaction(id, payerEmail, socket);
+        this.transactionService.updateTransaction(id, customerId, payerEmail, socket);
     }
     
     public deleteTransaction(request: Request, socket: any): void {
@@ -48,9 +49,9 @@ export class TransactionController {
 
         const payload = request.body.payload;
 
-        const { id } = payload as DeleteTransactionPayload;
+        const { id, customerId } = payload as DeleteTransactionPayload;
 
-        this.transactionService.deleteTransaction(id, socket);
+        this.transactionService.deleteTransaction(id, customerId, socket);
     }
 
     public getTransaction(request: Request, socket: any): void {
@@ -62,9 +63,23 @@ export class TransactionController {
 
         const payload = request.body.payload;
 
-        const { customerId } = payload as GetTransactionPayload;
+        const { id, customerId } = payload as GetTransactionPayload;
 
-        this.transactionService.getTransaction(customerId, socket);
+        this.transactionService.getTransaction(id, customerId, socket);
+    }
+
+    public getTransactionHistory(request: Request, socket: any): void {
+        const validRequest = isValidRequest(request, socket);
+
+        if (!validRequest){
+            return ErrorHandler.handle('Corpo da requisição inválido', socket);
+        }
+
+        const payload = request.body.payload;
+
+        const { customerId } = payload as GetHistoryTransactionPayload;
+
+        this.transactionService.getTransactionHistory(customerId, socket);
     }
 
 }

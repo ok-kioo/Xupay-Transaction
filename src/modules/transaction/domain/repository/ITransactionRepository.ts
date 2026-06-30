@@ -5,6 +5,7 @@ export interface ITransactionRepository {
     update(id: string, data: Partial<Transaction>): Promise<Transaction>;
     delete(id: string): Promise<void>;
     findById(id: string): Promise<Transaction | null>;
+    findAllByCustomerId(customerId: string): Promise<Transaction[]>;
 
     
 }

@@ -1,4 +1,3 @@
-import { TransactionStatus } from "@/infra/database/generated/browser";
 import { Transaction } from "../entity/Transaction";
 import { ITransactionRepository } from "./ITransactionRepository";
 import { prismaClient } from "@/infra/database/prismaClient";
@@ -40,6 +39,16 @@ export class TransactionRepositoryImpl implements ITransactionRepository {
         });
 
         return transaction;
+    }
+
+    public async findAllByCustomerId(customerId: string): Promise<Transaction[]> {
+        const transactions = await prismaClient.transaction.findMany({
+            where: {
+                customerId: customerId
+            }
+        });
+
+        return transactions;
     }
 
 }

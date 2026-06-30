@@ -58,7 +58,7 @@ export class TransactionService {
     socket.end();
   }
 
-  public async updateTransaction(id: string, payerEmail: string, socket: Socket): Promise<void> {
+  public async updateTransaction(id: string, customerId:string, payerEmail: string, socket: Socket): Promise<void> {
     if (!id) {
       return ErrorHandler
         .handle("ID da transação é obrigatório para atualização",socket);
@@ -72,6 +72,14 @@ export class TransactionService {
 
     if (!existingTransaction) {
       return ErrorHandler.handle("Transação com este ID não encontrada",socket);
+    }
+
+    if(existingTransaction.status === TransactionStatus.COMPLETED){
+      return ErrorHandler.handle("Transação concluída não pode ser atualizada",socket);
+    }
+
+    if(existingTransaction.customerId !== customerId){
+      return ErrorHandler.handle("Transação não pertence a este cliente",socket);
     }
 
     const dataToUpdate: {
@@ -113,7 +121,7 @@ export class TransactionService {
     socket.end();
   }
 
-  public async deleteTransaction(id: string, socket: Socket): Promise<void> {
+  public async deleteTransaction(id: string, customerId: string, socket: Socket): Promise<void> {
     if (!id) {
       return ErrorHandler.handle("ID da transação é obrigatório para exclusão",socket);
     }
@@ -126,6 +134,10 @@ export class TransactionService {
 
     if(existingTransaction.status === TransactionStatus.COMPLETED){
       return ErrorHandler.handle("Transação concluída não pode ser excluída",socket);
+    }
+
+    if(existingTransaction.customerId !== customerId){
+      return ErrorHandler.handle("Transação não pertence a este cliente",socket);
     }
 
     const dataToUpdate: {
@@ -149,7 +161,7 @@ export class TransactionService {
     socket.end();
   }
 
-  public async getTransaction(id: string, socket: Socket): Promise<void> {
+  public async getTransaction(id: string, customerId: string, socket: Socket): Promise<void> {
     if (!id) {
       return ErrorHandler.handle("ID da transação é obrigatório para consulta",socket
       );
@@ -159,6 +171,10 @@ export class TransactionService {
 
     if (!transaction) {
       return ErrorHandler.handle("Transação com este ID não encontrada",socket);
+    }
+
+    if(transaction.customerId !== customerId){
+      return ErrorHandler.handle("Transação não pertence a este cliente",socket);
     }
     
     const responseBody = {
@@ -176,5 +192,33 @@ export class TransactionService {
     socket.write(response);
     socket.end();
 
+  }
+
+  public async getTransactionHistory(customerId: string, socket: Socket): Promise<void> {
+    if (!customerId) {
+      return ErrorHandler.handle("CustomerId da transação é obrigatório para consulta",socket
+      );
+    }
+
+    const transactions = await this.transactionRepository.findAllByCustomerId(customerId);
+
+    if (!transactions.length) {
+      return ErrorHandler.handle("Nenhuma transação encontrada para este cliente",socket);
+    }
+
+    const responseBody = {
+      transactions: transactions.map((tx) => ({
+        id: tx.id,
+        amount: tx.amount.toString(),
+        status: tx.status,
+        payerEmail: tx.payerEmail ? tx.payerEmail : '',
+        createdAt: tx.createdAt.toISOString(),
+
+      }))
+    };
+
+    const response = ResponseParser.serializeResponse(200, responseBody);
+    socket.write(response);
+    socket.end();
   }
 }

@@ -30,7 +30,7 @@ export class TransactionWorker {
 
   public async registerService(): Promise<void> {
     try {
-      this.dnsServiceClient.CreateDNS();
+      await this.dnsServiceClient.CreateDNS();
 
       const domain = process.env.XUPAY_SERVICE_DOMAIN || "";
 

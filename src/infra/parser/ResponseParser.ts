@@ -13,7 +13,7 @@ import { JsonCodec } from "./JsonCodec";
 import type { JsonObject } from "./JsonCodec";
 import { Prisma } from "@/infra/database/generated/client";
 import { HealthPayload } from "@/@types/contracts/payload/HealthPayload";
-import { GetHistoryTransactionPayload } from "@/@types/contracts/payload/GetHistoryTransactionPayload copy";
+import { GetTransactionHistoryPayload } from "@/@types/contracts/payload/GetTransactionHistoryPayload";
 
 type ParsedPayload =
   | CreateTransactionPayload
@@ -21,7 +21,7 @@ type ParsedPayload =
   | UpdateTransactionPayload
   | DeleteTransactionPayload
   | HealthPayload
-  | GetHistoryTransactionPayload;
+  | GetTransactionHistoryPayload;
 
 type SerializableRequest = {
   method: string;
@@ -147,7 +147,7 @@ export class ResponseParser {
     }
 
     if (path === "history") {
-      return this.parseGetHistoryPayload(payload);
+      return this.parseGetTransactionHistoryPayload(payload);
     }
 
     return this.parseGetPayload(payload);
@@ -181,11 +181,11 @@ export class ResponseParser {
     };
   }
 
-  private static parseGetHistoryPayload(
+  private static parseGetTransactionHistoryPayload(
     payload: JsonObject
-  ): GetHistoryTransactionPayload {
+  ): GetTransactionHistoryPayload {
     return {
-      kind: "GET_HISTORY_TRANSACTION_PAYLOAD",
+      kind: "GET_TRANSACTION_HISTORY_PAYLOAD",
       customerId: this.requiredString(payload.customerId, "customerId"),
     };
   }

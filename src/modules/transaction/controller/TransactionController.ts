@@ -5,7 +5,7 @@ import { CreateTransactionPayload } from '@/@types/contracts/payload/CreateTrans
 import { UpdateTransactionPayload } from '@/@types/contracts/payload/UpdateTransactionPayload';
 import { DeleteTransactionPayload } from '@/@types/contracts/payload/DeleteTransactionPayload';
 import { GetTransactionPayload } from '@/@types/contracts/payload/GetTransactionPayload';
-import { GetHistoryTransactionPayload } from '@/@types/contracts/payload/GetHistoryTransactionPayload copy';
+import { GetTransactionHistoryPayload } from '@/@types/contracts/payload/GetTransactionHistoryPayload';
 
 export class TransactionController {
     constructor(
@@ -77,7 +77,7 @@ export class TransactionController {
 
         const payload = request.body.payload;
 
-        const { customerId } = payload as GetHistoryTransactionPayload;
+        const { customerId } = payload as GetTransactionHistoryPayload;
 
         this.transactionService.getTransactionHistory(customerId, socket);
     }
